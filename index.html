@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grand Staff Score Editor</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:#e9e9e9;color:#222;font-family:Arial,sans-serif}
+.toolbar{max-width:900px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,select,input{font:inherit;padding:7px 9px}
+button{cursor:pointer}
+.page{width:8.5in;min-height:11in;padding:.42in;background:white;margin:auto;box-shadow:0 2px 12px #0002;overflow:visible}
+.score-system{position:relative;height:1.88in;margin-bottom:.06in}
+.measure{position:absolute;top:0;height:1.72in;border-left:1px solid #333}
+.measure.last{border-right:1px solid #333}
+.staff-line{position:absolute;height:1px;background:#333}
+.clef{position:absolute;left:3px;z-index:3;font-family:"Noto Music","Bravura","Segoe UI Symbol","Apple Symbols",serif;line-height:1;pointer-events:none}
+.treble-clef{top:8px;font-size:43px}
+.bass-clef{top:78px;font-size:34px}
+.time-display{position:absolute;left:29px;top:16px;width:22px;text-align:center;font-family:serif;font-size:18px;font-weight:bold;line-height:19px;z-index:3;pointer-events:none}
+.key-signature{position:absolute;top:0;left:0;height:100%;pointer-events:none;z-index:2}
+.key-symbol{position:absolute;transform:translateX(-50%);font-family:"Noto Music","Bravura","Segoe UI Symbol","Apple Symbols",serif;font-size:20px;line-height:1}
+.measure-number{position:absolute;top:-19px;left:3px;font-size:11px;color:#555}
+.beat-plus{position:absolute;top:-23px;transform:translateX(-50%);padding:0;width:19px;height:19px;border:1px solid #aaa;border-radius:50%;background:white;color:#333;font-size:14px;line-height:16px;z-index:5}
+.beat-plus:hover{background:#e8f2ff;border-color:#2674c8}
+.note{position:absolute;transform:translate(-50%,-50%);z-index:4;border:0;background:transparent;padding:0;width:30px;height:30px;color:#111}
+.note:hover{background:#e8f2ff;outline:1px solid #7aa9dc;border-radius:4px}
+.notehead{display:inline-block;width:12px;height:9px;border-radius:50%;background:#111;transform:rotate(-25deg);position:relative}
+.notehead.half,.notehead.whole{background:white;border:1.7px solid #111;width:13px;height:9px}
+.notehead.whole{width:14px;height:10px;border-width:2px}
+.stem{position:absolute;height:27px;width:1.5px;background:#111;left:18px;bottom:14px}
+.flag{position:absolute;left:17px;top:-2px;font-size:20px;line-height:1;font-family:serif}
+.note-accidental{position:absolute;left:-10px;top:-9px;font-size:20px;line-height:1;font-family:serif}
+.duration-dot{position:absolute;left:14px;top:-4px;font-size:19px;line-height:1}
+.staccato-dot{position:absolute;left:8px;top:12px;font-size:15px;line-height:1}
+.slur{position:absolute;height:15px;border-top:1.5px solid #111;border-radius:50% 50% 0 0;z-index:3;pointer-events:none}
+.ledger-line{position:absolute;height:1px;width:21px;background:#333;left:50%;transform:translateX(-50%);z-index:1}
+.dialog-backdrop{display:none;position:fixed;inset:0;background:#0007;z-index:100;align-items:center;justify-content:center;padding:15px}
+.dialog-backdrop.open{display:flex}
+.dialog{width:min(440px,100%);max-height:90vh;overflow-y:auto;background:white;padding:22px;border-radius:8px;box-shadow:0 8px 30px #0004}
+.dialog h2{margin:0 0 16px;font-size:21px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:14px;font-weight:bold;margin-bottom:5px}
+.field select,.field input{width:100%}
+.dialog-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.dialog-actions button{flex:1}
+.primary{background:#1769c2;color:white;border:1px solid #1769c2}
+.danger{color:#b00020}
+.error{color:#b00020;background:#fff0f0;border:1px solid #e4aaaa;border-radius:4px;padding:9px;font-size:13px;display:none;margin-top:12px}
+.error.visible{display:block}
+.preview{min-height:48px;padding:8px;background:#f6f6f6;border:1px solid #ddd;text-align:center;font-family:serif;font-size:25px}
+.hint{color:#666;font-size:12px;margin-top:5px}
+@media print{
+ body{padding:0;background:white}
+ .toolbar,.beat-plus{display:none!important}
+ .page{margin:0;box-shadow:none}
+ .score-system{break-inside:avoid}
+}
+@media(max-width:700px){body{padding:5px;overflow-x:auto}}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button id="editTimeButton">Time / key signature</button>
+  <button id="clearButton">Clear all notes</button>
+  <button onclick="window.print()">Print score</button>
+  <span id="status" style="font-size:13px;color:#555"></span>
+</div>
+
+<div class="page" id="page"><div id="score"></div></div>
+
+<div class="dialog-backdrop" id="noteBackdrop">
+  <div class="dialog">
+    <h2 id="noteDialogTitle">Add note</h2>
+
+    <div class="field">
+      <label for="notePitch">Pitch</label>
+      <select id="notePitch"></select>
+    </div>
+    <div class="field">
+      <label for="noteClef">Staff</label>
+      <select id="noteClef">
+        <option value="treble">Treble clef</option>
+        <option value="bass">Bass clef</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="noteType">Note duration</label>
+      <select id="noteType">
+        <option value="whole">Whole note</option>
+        <option value="half">Half note</option>
+        <option value="quarter" selected>Quarter note</option>
+        <option value="eighth">Eighth note</option>
+        <option value="sixteenth">Sixteenth note</option>
+        <option value="thirtysecond">Thirty-second note</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="noteAccidental">Accidental</label>
+      <select id="noteAccidental">
+        <option value="none">None</option>
+        <option value="natural">Natural (♮)</option>
+        <option value="sharp">Sharp (♯)</option>
+        <option value="flat">Flat (♭)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="noteDotted">Duration dot</label>
+      <select id="noteDotted">
+        <option value="no">No dot</option>
+        <option value="yes">Dotted — add half the note's duration</option>
+      </select>
+      <div class="hint">Example: a dotted half note lasts 3 quarter-note beats in 4/4.</div>
+    </div>
+
+    <div class="field">
+      <label for="noteArticulation">Articulation</label>
+      <select id="noteArticulation">
+        <option value="none">None</option>
+        <option value="staccato">Staccato (short, detached)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="noteConnection">Slur / legato connection</label>
+      <select id="noteConnection">
+        <option value="none">None</option>
+        <option value="slurNext">Slur to next note</option>
+        <option value="slurPrevious">Slur from previous note</option>
+        <option value="legatoNext">Legato to next note</option>
+        <option value="legatoPrevious">Legato from previous note</option>
+      </select>
+      <div class="hint">Connections are drawn between adjacent notes on the same staff.</div>
+    </div>
+
+    <div class="field">
+      <label>Preview</label>
+      <div class="preview" id="notePreview">♩</div>
+    </div>
+    <div class="field">
+      <label>Beat position</label>
+      <div id="beatPositionLabel"></div>
+    </div>
+    <div class="error" id="noteError"></div>
+    <div class="dialog-actions">
+      <button id="saveNoteButton" class="primary">Save note</button>
+      <button id="deleteNoteButton" class="danger">Delete</button>
+      <button id="cancelNoteButton">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-backdrop" id="timeBackdrop">
+  <div class="dialog">
+    <h2>Time and key signature</h2>
+    <div class="field">
+      <label for="beatsPerMeasure">Beats per measure</label>
+      <select id="beatsPerMeasure"></select>
+    </div>
+    <div class="field">
+      <label for="beatUnit">Beat unit</label>
+      <select id="beatUnit">
+        <option value="1">Whole note</option>
+        <option value="2">Half note</option>
+        <option value="4" selected>Quarter note</option>
+        <option value="8">Eighth note</option>
+        <option value="16">Sixteenth note</option>
+        <option value="32">Thirty-second note</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="keyType">Key signature accidentals</label>
+      <select id="keyType">
+        <option value="none">None</option>
+        <option value="sharp">Sharps</option>
+        <option value="flat">Flats</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="keyCount">Number of sharps / flats</label>
+      <select id="keyCount">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="keyVertical">Key signature vertical position</label>
+      <select id="keyVertical">
+        <option value="-4">Higher on staff</option>
+        <option value="0" selected>Standard position</option>
+        <option value="4">Lower on staff</option>
+      </select>
+    </div>
+    <div class="preview" id="keyPreview">4/4</div>
+    <div class="error" id="timeError"></div>
+    <div class="dialog-actions">
+      <button id="saveTimeButton" class="primary">Apply</button>
+      <button id="cancelTimeButton">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const score = document.getElementById("score");
+  const page = document.getElementById("page");
+
+  let timeBeats = 4;
+  let beatUnit = 4;
+  let keyType = "none";
+  let keyCount = 0;
+  let keyVertical = 0;
+  let notes = [];
+  let nextNoteId = 1;
+
+  let editor = {
+    measureIndex: 0,
+    beatPosition: 0,
+    editingNoteId: null
+  };
+
+  const durationBeats = {
+    whole: 4,
+    half: 2,
+    quarter: 1,
+    eighth: 0.5,
+    sixteenth: 0.25,
+    thirtysecond: 0.125
+  };
+
+  const noteGlyph = {
+    whole: "𝅝",
+    half: "𝅗𝅥",
+    quarter: "♩",
+    eighth: "♪",
+    sixteenth: "𝅘𝅥𝅯",
+    thirtysecond: "𝅘𝅥𝅰"
+  };
+
+  const accidentalGlyph = {
+    none: "",
+    natural: "♮",
+    sharp: "♯",
+    flat: "♭"
+  };
+
+  const pitchNames = [
+    "C2","D2","E2","F2","G2","A2","B2",
+    "C3","D3","E3","F3","G3","A3","B3",
+    "C4","D4","E4","F4","G4","A4","B4",
+    "C5","D5","E5","F5","G5","A5","B5",
+    "C6","D6","E6","F6","G6","A6","B6"
+  ];
+
+  const notePitch = document.getElementById("notePitch");
+  const noteType = document.getElementById("noteType");
+  const noteClef = document.getElementById("noteClef");
+  const noteAccidental = document.getElementById("noteAccidental");
+  const noteDotted = document.getElementById("noteDotted");
+  const noteArticulation = document.getElementById("noteArticulation");
+  const noteConnection = document.getElementById("noteConnection");
+  const noteBackdrop = document.getElementById("noteBackdrop");
+  const timeBackdrop = document.getElementById("timeBackdrop");
+  const beatsSelect = document.getElementById("beatsPerMeasure");
+
+  pitchNames.forEach(p => {
+    const option = document.createElement("option");
+    option.value = p;
+    option.textContent = p;
+    notePitch.appendChild(option);
+  });
+
+  for (let i = 1; i <= 32; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = i;
+    beatsSelect.appendChild(option);
+  }
+
+  const systems = 5;
+  const measuresPerSystem = 4;
+  const totalMeasures = systems * measuresPerSystem;
+
+  const STAFF_TOP = 22;
+  const LINE_GAP = 7;
+  const STAFF_HEIGHT = LINE_GAP * 4;
+  const TREBLE_TOP = STAFF_TOP;
+  const BASS_TOP = STAFF_TOP + 70;
+  const EPSILON = 0.000001;
+
+  // Convert a note type plus its duration dot to quarter-note beats.
+  function getDuration(note) {
+    const base = durationBeats[note.type] || 0;
+    return note.dotted ? base * 1.5 : base;
+  }
+
+  function makeLine(top, width) {
+    const line = document.createElement("div");
+    line.className = "staff-line";
+    line.style.top = top + "px";
+    line.style.left = "0";
+    line.style.width = width + "px";
+    return line;
+  }
+
+  function keyPositions(type, clef) {
+    const sharpTreble = [0, 3, -1, 2, 5, 1, 4];
+    const flatTreble  = [2, -1, 3, 0, 4, 1, 5];
+    const sharpBass   = [2, 5, 1, 4, 7, 3, 6];
+    const flatBass    = [4, 1, 5, 2, 6, 3, 7];
+
+    if (type === "sharp") return clef === "treble" ? sharpTreble : sharpBass;
+    if (type === "flat") return clef === "treble" ? flatTreble : flatBass;
+    return [];
+  }
+
+  function addKeySignature(measure, measureInSystem) {
+    if (measureInSystem !== 0 || keyType === "none" || keyCount === 0) return;
+
+    const glyph = keyType === "sharp" ? "♯" : "♭";
+
+    ["treble", "bass"].forEach(clef => {
+      const positions = keyPositions(keyType, clef);
+      const top = clef === "treble" ? TREBLE_TOP : BASS_TOP;
+      const wrapper = document.createElement("div");
+      wrapper.className = "key-signature";
+
+      for (let i = 0; i < keyCount; i++) {
+        const symbol = document.createElement("span");
+        symbol.className = "key-symbol";
+        symbol.textContent = glyph;
+        symbol.style.left = (53 + i * 10) + "px";
+        symbol.style.top =
+          (top + positions[i] * (LINE_GAP / 2) - 9 + keyVertical) + "px";
+        wrapper.appendChild(symbol);
+      }
+      measure.appendChild(wrapper);
+    });
+  }
+
+  function beatLayout(measureInSystem, measureW) {
+    const start = measureInSystem === 0 ? 96 : 14;
+    return { start, usable: Math.max(12, measureW - start - 8) };
+  }
+
+  function addBeatPluses(measure, measureIndex, measureInSystem, measureW) {
+    const { start, usable } = beatLayout(measureInSystem, measureW);
+
+    for (let beat = 0; beat < timeBeats; beat++) {
+      const plus = document.createElement("button");
+      plus.type = "button";
+      plus.className = "beat-plus";
+      plus.textContent = "+";
+      plus.title = `Add note at beat ${beat + 1} of measure ${measureIndex + 1}`;
+      plus.style.left = (start + (beat / timeBeats) * usable) + "px";
+      plus.addEventListener("click", () => openNoteEditor(measureIndex, beat, null));
+      measure.appendChild(plus);
+    }
+  }
+
+  function buildScore() {
+    score.innerHTML = "";
+    const pageWidth = page.clientWidth - 2;
+    const measureW = pageWidth / measuresPerSystem;
+
+    for (let s = 0; s < systems; s++) {
+      const system = document.createElement("div");
+      system.className = "score-system";
+      system.style.width = pageWidth + "px";
+
+      for (let m = 0; m < measuresPerSystem; m++) {
+        const measureIndex = s * measuresPerSystem + m;
+        const measure = document.createElement("div");
+        measure.className = "measure" + (m === measuresPerSystem - 1 ? " last" : "");
+        measure.dataset.measure = measureIndex;
+        measure.style.left = (m * measureW) + "px";
+        measure.style.width = measureW + "px";
+
+        for (let i = 0; i < 5; i++) {
+          measure.appendChild(makeLine(TREBLE_TOP + i * LINE_GAP, measureW));
+          measure.appendChild(makeLine(BASS_TOP + i * LINE_GAP, measureW));
+        }
+
+        const number = document.createElement("div");
+        number.className = "measure-number";
+        number.textContent = measureIndex + 1;
+        measure.appendChild(number);
+
+        if (m === 0) {
+          const treble = document.createElement("div");
+          treble.className = "clef treble-clef";
+          treble.textContent = "𝄞";
+          measure.appendChild(treble);
+
+          const bass = document.createElement("div");
+          bass.className = "clef bass-clef";
+          bass.textContent = "𝄢";
+          measure.appendChild(bass);
+
+          const time = document.createElement("div");
+          time.className = "time-display";
+          time.innerHTML = `<div>${timeBeats}</div><div>${beatUnit}</div>`;
+          measure.appendChild(time);
+        }
+
+        addKeySignature(measure, m);
+        addBeatPluses(measure, measureIndex, m, measureW);
+        system.appendChild(measure);
+      }
+
+      score.appendChild(system);
+    }
+
+    renderNotes();
+    updateKeyPreview();
+  }
+
+  function pitchStep(pitch) {
+    const match = /^([A-G])(\d)$/.exec(pitch);
+    const order = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+    return Number(match[2]) * 7 + order[match[1]];
+  }
+
+  function staffY(pitch, clef) {
+    const bottomPitch = clef === "treble" ? pitchStep("E4") : pitchStep("G2");
+    const step = pitchStep(pitch) - bottomPitch;
+    const bottomY = (clef === "treble" ? TREBLE_TOP : BASS_TOP) + STAFF_HEIGHT;
+    return bottomY - step * (LINE_GAP / 2);
+  }
+
+  function noteX(note) {
+    const measureInSystem = note.measureIndex % measuresPerSystem;
+    const pageWidth = page.clientWidth - 2;
+    const measureW = pageWidth / measuresPerSystem;
+    const { start, usable } = beatLayout(measureInSystem, measureW);
+    return start + (note.beatPosition / timeBeats) * usable;
+  }
+
+  function renderNotes() {
+    document.querySelectorAll(".note,.note-ledger,.slur").forEach(el => el.remove());
+
+    notes.forEach(note => {
+      const measure = document.querySelector(
+        `.measure[data-measure="${note.measureIndex}"]`
+      );
+      if (!measure) return;
+
+      const x = noteX(note);
+      const y = staffY(note.pitch, note.clef);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "note";
+      button.style.left = x + "px";
+      button.style.top = y + "px";
+      button.title = `${note.pitch}, ${note.type}${note.dotted ? " dotted" : ""}`;
+      button.setAttribute("aria-label", "Edit " + button.title);
+
+      const accidental = accidentalGlyph[note.accidental || "none"];
+      if (accidental) {
+        const acc = document.createElement("span");
+        acc.className = "note-accidental";
+        acc.textContent = accidental;
+        button.appendChild(acc);
+      }
+
+      const head = document.createElement("span");
+      head.className = "notehead " +
+        (note.type === "whole" || note.type === "half" ? note.type : "filled");
+      button.appendChild(head);
+
+      if (note.type !== "whole") {
+        const stem = document.createElement("span");
+        stem.className = "stem";
+        button.appendChild(stem);
+      }
+
+      if (["eighth", "sixteenth", "thirtysecond"].includes(note.type)) {
+        const flag = document.createElement("span");
+        flag.className = "flag";
+        flag.textContent = note.type === "eighth" ? "♪" :
+          note.type === "sixteenth" ? "𝅘𝅥𝅯" : "𝅘𝅥𝅰";
+        button.appendChild(flag);
+      }
+
+      if (note.dotted) {
+        const dot = document.createElement("span");
+        dot.className = "duration-dot";
+        dot.textContent = "·";
+        button.appendChild(dot);
+      }
+
+      if (note.articulation === "staccato") {
+        const dot = document.createElement("span");
+        dot.className = "staccato-dot";
+        dot.textContent = "•";
+        button.appendChild(dot);
+      }
+
+      const top = note.clef === "treble" ? TREBLE_TOP : BASS_TOP;
+      const bottom = top + STAFF_HEIGHT;
+      if (y < top) {
+        for (let ly = top - LINE_GAP; ly >= y - 1; ly -= LINE_GAP) {
+          addLedger(measure, x, ly);
+        }
+      } else if (y > bottom) {
+        for (let ly = bottom + LINE_GAP; ly <= y + 1; ly += LINE_GAP) {
+          addLedger(measure, x, ly);
+        }
+      }
+
+      button.addEventListener("click", () => {
+        openNoteEditor(note.measureIndex, note.beatPosition, note.id);
+      });
+      measure.appendChild(button);
+    });
+
+    renderSlurs();
+    document.getElementById("status").textContent =
+      `${notes.length} note${notes.length === 1 ? "" : "s"} added`;
+  }
+
+  function addLedger(measure, x, y) {
+    const line = document.createElement("div");
+    line.className = "ledger-line note-ledger";
+    line.style.left = x + "px";
+    line.style.top = y + "px";
+    measure.appendChild(line);
+  }
+
+  function hasConnectionToNext(note) {
+    return ["slurNext", "legatoNext"].includes(note.connection);
+  }
+
+  function hasConnectionFromPrevious(note) {
+    return ["slurPrevious", "legatoPrevious"].includes(note.connection);
+  }
+
+  function renderSlurs() {
+    notes.forEach(note => {
+      if (!hasConnectionToNext(note)) return;
+
+      const next = notes
+        .filter(n => n.clef === note.clef)
+        .filter(n => n.measureIndex * 1000 + n.beatPosition >
+                     note.measureIndex * 1000 + note.beatPosition)
+        .sort((a, b) =>
+          (a.measureIndex * 1000 + a.beatPosition) -
+          (b.measureIndex * 1000 + b.beatPosition)
+        )[0];
+
+      if (!next) return;
+      drawConnection(note, next);
+    });
+
+    // Also support a connection specified from the following note.
+    notes.forEach(note => {
+      if (!hasConnectionFromPrevious(note)) return;
+      const previous = notes
+        .filter(n => n.clef === note.clef)
+        .filter(n => n.measureIndex * 1000 + n.beatPosition <
+                     note.measureIndex * 1000 + note.beatPosition)
+        .sort((a, b) =>
+          (b.measureIndex * 1000 + b.beatPosition) -
+          (a.measureIndex * 1000 + a.beatPosition)
+        )[0];
+
+      if (!previous || hasConnectionToNext(previous)) return;
+      drawConnection(previous, note);
+    });
+  }
+
+  function drawConnection(first, second) {
+    // This lightweight arc is rendered when both notes are in the same measure.
+    // Cross-measure links are stored, but need a spanning-system engraving layer.
+    if (first.measureIndex !== second.measureIndex) return;
+
+    const measure = document.querySelector(
+      `.measure[data-measure="${first.measureIndex}"]`
+    );
+    if (!measure) return;
+
+    const x1 = noteX(first);
+    const x2 = noteX(second);
+    const y1 = staffY(first.pitch, first.clef);
+    const y2 = staffY(second.pitch, second.clef);
+    const left = Math.min(x1, x2) + 6;
+    const width = Math.max(12, Math.abs(x2 - x1) - 12);
+    const arc = document.createElement("div");
+    arc.className = "slur";
+    arc.style.left = left + "px";
+    arc.style.top = (Math.min(y1, y2) - 14) + "px";
+    arc.style.width = width + "px";
+    measure.appendChild(arc);
+  }
+
+  function openNoteEditor(measureIndex, beatPosition, noteId) {
+    editor = { measureIndex, beatPosition, editingNoteId: noteId };
+    const existing = noteId === null ? null : notes.find(n => n.id === noteId);
+
+    document.getElementById("noteDialogTitle").textContent =
+      existing ? "Edit note" : "Add note";
+
+    notePitch.value = existing ? existing.pitch : "C4";
+    noteType.value = existing ? existing.type : "quarter";
+    noteClef.value = existing ? existing.clef : "treble";
+    noteAccidental.value = existing ? (existing.accidental || "none") : "none";
+    noteDotted.value = existing && existing.dotted ? "yes" : "no";
+    noteArticulation.value = existing ? (existing.articulation || "none") : "none";
+    noteConnection.value = existing ? (existing.connection || "none") : "none";
+
+    document.getElementById("beatPositionLabel").textContent =
+      `Measure ${measureIndex + 1}, beat ${beatPosition + 1}`;
+
+    document.getElementById("deleteNoteButton").style.display =
+      existing ? "inline-block" : "none";
+
+    hideError("noteError");
+    updateNotePreview();
+    noteBackdrop.classList.add("open");
+  }
+
+  function updateNotePreview() {
+    const acc = accidentalGlyph[noteAccidental.value] || "";
+    const glyph = noteGlyph[noteType.value] || "♩";
+    const dot = noteDotted.value === "yes" ? " ·" : "";
+    const staccato = noteArticulation.value === "staccato" ? "  •" : "";
+    const connection = noteConnection.value === "none" ? "" :
+      noteConnection.value.toLowerCase().includes("slur") ? "  ⌒" : "  legato";
+    document.getElementById("notePreview").textContent =
+      `${acc}${notePitch.value}  ${glyph}${dot}${staccato}${connection}`;
+  }
+
+  function showError(id, message) {
+    const el = document.getElementById(id);
+    el.textContent = message;
+    el.classList.add("visible");
+  }
+
+  function hideError(id) {
+    const el = document.getElementById(id);
+    el.textContent = "";
+    el.classList.remove("visible");
+  }
+
+  function measureEnd(measureIndex, excludingId = null, candidate = null) {
+    const measureNotes = notes.filter(
+      n => n.measureIndex === measureIndex && n.id !== excludingId
+    );
+    if (candidate) measureNotes.push(candidate);
+
+    // Simultaneous notes share the same timeline. The measure ends at the
+    // latest endpoint, not the sum of durations across both staves.
+    return measureNotes.reduce(
+      (latest, n) => Math.max(latest, n.beatPosition + getDuration(n)),
+      0
+    );
+  }
+
+  function validateNoteSave() {
+    const duration = getDuration({
+      type: noteType.value,
+      dotted: noteDotted.value === "yes"
+    });
+
+    if (!duration) {
+      showError("noteError", "Unknown note duration.");
+      return false;
+    }
+
+    const candidate = {
+      measureIndex: editor.measureIndex,
+      beatPosition: editor.beatPosition,
+      type: noteType.value,
+      dotted: noteDotted.value === "yes",
+      pitch: notePitch.value,
+      clef: noteClef.value
+    };
+
+    const end = editor.beatPosition + duration;
+    if (end > timeBeats + EPSILON) {
+      showError(
+        "noteError",
+        `This note ends at beat ${end}, but the measure allows only ${timeBeats} beats.`
+      );
+      return false;
+    }
+
+    const latestEnd = measureEnd(
+      editor.measureIndex,
+      editor.editingNoteId,
+      candidate
+    );
+
+    if (latestEnd > timeBeats + EPSILON) {
+      showError(
+        "noteError",
+        `Cannot save: this note extends beyond the ${timeBeats}-beat measure.`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  function saveNote() {
+    hideError("noteError");
+    if (!validateNoteSave()) return;
+
+    const data = {
+      measureIndex: editor.measureIndex,
+      beatPosition: editor.beatPosition,
+      pitch: notePitch.value,
+      type: noteType.value,
+      clef: noteClef.value,
+      accidental: noteAccidental.value,
+      dotted: noteDotted.value === "yes",
+      articulation: noteArticulation.value,
+      connection: noteConnection.value
+    };
+
+    if (editor.editingNoteId !== null) {
+      const index = notes.findIndex(n => n.id === editor.editingNoteId);
+      if (index !== -1) notes[index] = { ...notes[index], ...data };
+    } else {
+      notes.push({ id: nextNoteId++, ...data });
+    }
+
+    noteBackdrop.classList.remove("open");
+    renderNotes();
+  }
+
+  function deleteNote() {
+    if (editor.editingNoteId === null) return;
+    notes = notes.filter(n => n.id !== editor.editingNoteId);
+    noteBackdrop.classList.remove("open");
+    renderNotes();
+  }
+
+  function openTimeEditor() {
+    beatsSelect.value = timeBeats;
+    document.getElementById("beatUnit").value = beatUnit;
+    document.getElementById("keyType").value = keyType;
+    document.getElementById("keyCount").value = keyCount;
+    document.getElementById("keyVertical").value = keyVertical;
+    hideError("timeError");
+    updateKeyPreview();
+    timeBackdrop.classList.add("open");
+  }
+
+  function updateKeyPreview() {
+    const beats = beatsSelect.value || timeBeats;
+    const unit = document.getElementById("beatUnit").value || beatUnit;
+    const type = document.getElementById("keyType").value || keyType;
+    const count = Number(document.getElementById("keyCount").value ?? keyCount);
+    const glyph = type === "sharp" ? "♯" : type === "flat" ? "♭" : "";
+    const symbols = type === "none" ? "No key signature" : glyph.repeat(count);
+    document.getElementById("keyPreview").textContent = `${beats}/${unit}     ${symbols}`;
+  }
+
+  function saveTimeSettings() {
+    hideError("timeError");
+    const newBeats = Number(beatsSelect.value);
+    const newUnit = Number(document.getElementById("beatUnit").value);
+    const newKeyType = document.getElementById("keyType").value;
+    const newKeyCount = Number(document.getElementById("keyCount").value);
+    const newKeyVertical = Number(document.getElementById("keyVertical").value);
+
+    const invalidMeasures = [];
+    for (let m = 0; m < totalMeasures; m++) {
+      const end = measureEnd(m);
+      if (end > newBeats + EPSILON) invalidMeasures.push(m + 1);
+    }
+
+    if (invalidMeasures.length) {
+      showError(
+        "timeError",
+        `Cannot apply this time signature. Measure(s) ${invalidMeasures.join(", ")} ` +
+        `have notes extending beyond ${newBeats} beats. Adjust those notes first.`
+      );
+      return;
+    }
+
+    timeBeats = newBeats;
+    beatUnit = newUnit;
+    keyType = newKeyType;
+    keyCount = newKeyType === "none" ? 0 : newKeyCount;
+    keyVertical = newKeyVertical;
+
+    timeBackdrop.classList.remove("open");
+    buildScore();
+  }
+
+  document.getElementById("saveNoteButton").addEventListener("click", saveNote);
+  document.getElementById("deleteNoteButton").addEventListener("click", deleteNote);
+  document.getElementById("cancelNoteButton").addEventListener("click", () => {
+    noteBackdrop.classList.remove("open");
+  });
+
+  document.getElementById("editTimeButton").addEventListener("click", openTimeEditor);
+  document.getElementById("saveTimeButton").addEventListener("click", saveTimeSettings);
+  document.getElementById("cancelTimeButton").addEventListener("click", () => {
+    timeBackdrop.classList.remove("open");
+  });
+
+  document.getElementById("clearButton").addEventListener("click", () => {
+    if (notes.length && !confirm("Delete all notes from the score?")) return;
+    notes = [];
+    renderNotes();
+  });
+
+  [
+    notePitch, noteType, noteClef, noteAccidental,
+    noteDotted, noteArticulation, noteConnection
+  ].forEach(el => el.addEventListener("change", updateNotePreview));
+
+  ["beatsPerMeasure", "beatUnit", "keyType", "keyCount", "keyVertical"]
+    .forEach(id => document.getElementById(id)
+      .addEventListener("change", updateKeyPreview));
+
+  [noteBackdrop, timeBackdrop].forEach(backdrop => {
+    backdrop.addEventListener("click", event => {
+      if (event.target === backdrop) backdrop.classList.remove("open");
+    });
+  });
+
+  window.addEventListener("resize", buildScore);
+  buildScore();
+})();
+</script>
+</body>
+</html>
