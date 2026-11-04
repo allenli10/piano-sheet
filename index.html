@@ -1,836 +1,1449 @@
+
+
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grand Staff Score Editor</title>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Grand Staff Editor</title>
+
 <style>
+
 *{box-sizing:border-box}
-body{margin:0;padding:18px;background:#e9e9e9;color:#222;font-family:Arial,sans-serif}
-.toolbar{max-width:900px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button,select,input{font:inherit;padding:7px 9px}
-button{cursor:pointer}
-.page{width:8.5in;min-height:11in;padding:.42in;background:white;margin:auto;box-shadow:0 2px 12px #0002;overflow:visible}
-.score-system{position:relative;height:1.88in;margin-bottom:.06in}
-.measure{position:absolute;top:0;height:1.72in;border-left:1px solid #333}
-.measure.last{border-right:1px solid #333}
-.staff-line{position:absolute;height:1px;background:#333}
-.clef{position:absolute;left:3px;z-index:3;font-family:"Noto Music","Bravura","Segoe UI Symbol","Apple Symbols",serif;line-height:1;pointer-events:none}
-.treble-clef{top:8px;font-size:43px}
-.bass-clef{top:78px;font-size:34px}
-.time-display{position:absolute;left:29px;top:16px;width:22px;text-align:center;font-family:serif;font-size:18px;font-weight:bold;line-height:19px;z-index:3;pointer-events:none}
-.key-signature{position:absolute;top:0;left:0;height:100%;pointer-events:none;z-index:2}
-.key-symbol{position:absolute;transform:translateX(-50%);font-family:"Noto Music","Bravura","Segoe UI Symbol","Apple Symbols",serif;font-size:20px;line-height:1}
-.measure-number{position:absolute;top:-19px;left:3px;font-size:11px;color:#555}
-.beat-plus{position:absolute;top:-23px;transform:translateX(-50%);padding:0;width:19px;height:19px;border:1px solid #aaa;border-radius:50%;background:white;color:#333;font-size:14px;line-height:16px;z-index:5}
-.beat-plus:hover{background:#e8f2ff;border-color:#2674c8}
-.note{position:absolute;transform:translate(-50%,-50%);z-index:4;border:0;background:transparent;padding:0;width:30px;height:30px;color:#111}
-.note:hover{background:#e8f2ff;outline:1px solid #7aa9dc;border-radius:4px}
-.notehead{display:inline-block;width:12px;height:9px;border-radius:50%;background:#111;transform:rotate(-25deg);position:relative}
-.notehead.half,.notehead.whole{background:white;border:1.7px solid #111;width:13px;height:9px}
-.notehead.whole{width:14px;height:10px;border-width:2px}
-.stem{position:absolute;height:27px;width:1.5px;background:#111;left:18px;bottom:14px}
-.flag{position:absolute;left:17px;top:-2px;font-size:20px;line-height:1;font-family:serif}
-.note-accidental{position:absolute;left:-10px;top:-9px;font-size:20px;line-height:1;font-family:serif}
-.duration-dot{position:absolute;left:14px;top:-4px;font-size:19px;line-height:1}
-.staccato-dot{position:absolute;left:8px;top:12px;font-size:15px;line-height:1}
-.slur{position:absolute;height:15px;border-top:1.5px solid #111;border-radius:50% 50% 0 0;z-index:3;pointer-events:none}
-.ledger-line{position:absolute;height:1px;width:21px;background:#333;left:50%;transform:translateX(-50%);z-index:1}
-.dialog-backdrop{display:none;position:fixed;inset:0;background:#0007;z-index:100;align-items:center;justify-content:center;padding:15px}
-.dialog-backdrop.open{display:flex}
-.dialog{width:min(440px,100%);max-height:90vh;overflow-y:auto;background:white;padding:22px;border-radius:8px;box-shadow:0 8px 30px #0004}
-.dialog h2{margin:0 0 16px;font-size:21px}
-.field{margin-bottom:13px}
-.field label{display:block;font-size:14px;font-weight:bold;margin-bottom:5px}
-.field select,.field input{width:100%}
-.dialog-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.dialog-actions button{flex:1}
-.primary{background:#1769c2;color:white;border:1px solid #1769c2}
-.danger{color:#b00020}
-.error{color:#b00020;background:#fff0f0;border:1px solid #e4aaaa;border-radius:4px;padding:9px;font-size:13px;display:none;margin-top:12px}
-.error.visible{display:block}
-.preview{min-height:48px;padding:8px;background:#f6f6f6;border:1px solid #ddd;text-align:center;font-family:serif;font-size:25px}
-.hint{color:#666;font-size:12px;margin-top:5px}
-@media print{
- body{padding:0;background:white}
- .toolbar,.beat-plus{display:none!important}
- .page{margin:0;box-shadow:none}
- .score-system{break-inside:avoid}
-}
-@media(max-width:700px){body{padding:5px;overflow-x:auto}}
+
+:root{--blue:#2864dc;--border:#ddd;--muted:#777}
+
+body{margin:0;background:#f4f4f4;color:#222;font:14px Arial,sans-serif}
+
+header{background:white;border-bottom:1px solid var(--border);padding:16px 20px}
+
+h1{font-size:21px;margin:0;font-weight:600}
+
+main{max-width:1200px;margin:auto;padding:16px}
+
+button,input,select{font:inherit}
+
+button{cursor:pointer;background:white;border:1px solid #ccc;border-radius:8px;padding:9px 12px;color:#222}
+
+button:hover{background:#f0f4fc}
+
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.primary{background:var(--blue)!important;color:white!important;border-color:var(--blue)!important}
+
+.danger{color:#b42318}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+
+.pill{background:#e8e8e8;border-radius:20px;padding:6px 10px;font-size:12px}
+
+.sheet{background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+
+.sheethead{padding:13px 16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+.scroll{overflow-x:auto;padding:8px 12px 18px}
+
+#score{display:block;min-width:650px;width:100%;height:auto}
+
+.help{color:#777;font-size:12px;line-height:1.6;margin-top:12px}
+
+dialog{padding:0;border:0;border-radius:15px;width:min(460px,calc(100% - 24px));max-height:90vh;overflow:auto;box-shadow:0 16px 70px #0003}
+
+dialog::backdrop{background:#0006}
+
+.dhead,.dfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;gap:9px;border-bottom:1px solid #eee}
+
+.dhead h2{font-size:18px;margin:0}
+
+.dfoot{border-top:1px solid #eee;border-bottom:0;flex-wrap:wrap}
+
+.dbody{padding:18px 20px}
+
+.dfoot .right{display:flex;gap:8px;margin-left:auto}
+
+.label{font-size:11px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px}
+
+.full{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;background:white;margin-bottom:17px}
+
+.row{display:flex;gap:8px;align-items:center}
+
+.row>*{flex:1;min-width:0}
+
+.previewbox{background:#fafafa;border:1px solid #ddd;border-radius:12px;min-height:125px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:10px}
+
+#notePreview{display:block;width:100%;height:105px}
+
+.previewcaption{font-size:12px;color:#777;padding:0 10px 10px;text-align:center}
+
+.durationrow{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:18px}
+
+.durationrow button{min-width:43px;font-size:18px}
+
+#durationName{min-width:145px;text-align:center;color:#555;font-size:13px}
+
+.toggle{display:flex;gap:8px;margin-bottom:17px}
+
+.toggle button{flex:1}
+
+.selected{background:#eaf1ff!important;border-color:var(--blue)!important;color:#174ebd!important}
+
+.options{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}
+
+.options button{min-width:43px}
+
+.pitchbox{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+
+.pitchbox button{font-size:20px;width:45px}
+
+#pitchName{flex:1;text-align:center;font-size:22px;font-weight:600}
+
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+
+.sigcard{height:75px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px}
+
+.sigfrac{font-size:21px;font-weight:600;line-height:1.05;text-align:center}
+
+.sigfrac span{display:block}
+
+.sigcard small{font-size:11px;color:#777}
+
+.customgrid{display:flex;gap:10px}
+
+.customgrid label{flex:1;font-size:12px;color:#666}
+
+.customgrid input,.customgrid select{width:100%;margin-top:5px;padding:9px;border:1px solid #ccc;border-radius:8px;background:white}
+
+#toast{display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:white;padding:11px 16px;border-radius:8px;z-index:20}
+
+@media(max-width:500px){main{padding:10px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
+
 </head>
+
 <body>
 
-<div class="toolbar">
-  <button id="editTimeButton">Time / key signature</button>
-  <button id="clearButton">Clear all notes</button>
-  <button onclick="window.print()">Print score</button>
-  <span id="status" style="font-size:13px;color:#555"></span>
-</div>
+<header><h1>Grand Staff Editor</h1></header>
 
-<div class="page" id="page"><div id="score"></div></div>
+<main>
 
-<div class="dialog-backdrop" id="noteBackdrop">
-  <div class="dialog">
-    <h2 id="noteDialogTitle">Add note</h2>
+  <div class="toolbar">
 
-    <div class="field">
-      <label for="notePitch">Pitch</label>
-      <select id="notePitch"></select>
-    </div>
-    <div class="field">
-      <label for="noteClef">Staff</label>
-      <select id="noteClef">
-        <option value="treble">Treble clef</option>
-        <option value="bass">Bass clef</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="noteType">Note duration</label>
-      <select id="noteType">
-        <option value="whole">Whole note</option>
-        <option value="half">Half note</option>
-        <option value="quarter" selected>Quarter note</option>
-        <option value="eighth">Eighth note</option>
-        <option value="sixteenth">Sixteenth note</option>
-        <option value="thirtysecond">Thirty-second note</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="noteAccidental">Accidental</label>
-      <select id="noteAccidental">
-        <option value="none">None</option>
-        <option value="natural">Natural (♮)</option>
-        <option value="sharp">Sharp (♯)</option>
-        <option value="flat">Flat (♭)</option>
-      </select>
-    </div>
+    <span class="pill" id="barCount">1 bar</span>
 
-    <div class="field">
-      <label for="noteDotted">Duration dot</label>
-      <select id="noteDotted">
-        <option value="no">No dot</option>
-        <option value="yes">Dotted — add half the note's duration</option>
-      </select>
-      <div class="hint">Example: a dotted half note lasts 3 quarter-note beats in 4/4.</div>
-    </div>
+    <span class="pill" id="sigStatus">Choose a time signature</span>
 
-    <div class="field">
-      <label for="noteArticulation">Articulation</label>
-      <select id="noteArticulation">
-        <option value="none">None</option>
-        <option value="staccato">Staccato (short, detached)</option>
-      </select>
-    </div>
+    <span class="pill" id="noteCount">0 notes</span>
 
-    <div class="field">
-      <label for="noteConnection">Slur / legato connection</label>
-      <select id="noteConnection">
-        <option value="none">None</option>
-        <option value="slurNext">Slur to next note</option>
-        <option value="slurPrevious">Slur from previous note</option>
-        <option value="legatoNext">Legato to next note</option>
-        <option value="legatoPrevious">Legato from previous note</option>
-      </select>
-      <div class="hint">Connections are drawn between adjacent notes on the same staff.</div>
-    </div>
+    <button id="clearButton">Clear score</button>
 
-    <div class="field">
-      <label>Preview</label>
-      <div class="preview" id="notePreview">♩</div>
-    </div>
-    <div class="field">
-      <label>Beat position</label>
-      <div id="beatPositionLabel"></div>
-    </div>
-    <div class="error" id="noteError"></div>
-    <div class="dialog-actions">
-      <button id="saveNoteButton" class="primary">Save note</button>
-      <button id="deleteNoteButton" class="danger">Delete</button>
-      <button id="cancelNoteButton">Cancel</button>
-    </div>
   </div>
-</div>
 
-<div class="dialog-backdrop" id="timeBackdrop">
-  <div class="dialog">
+  <section class="sheet">
+
+    <div class="sheethead">
+
+      <strong>Grand staff</strong>
+
+      <span style="font-size:12px;color:#777">Click a beat number to add a note</span>
+
+    </div>
+
+    <div class="scroll">
+
+      <svg id="score" viewBox="0 0 900 290" aria-label="Grand staff"></svg>
+
+    </div>
+
+  </section>
+
+  <p class="help">
+
+    Use the small + above the staff to set the time and key signatures.
+
+    Click beat counters to add notes. Click a note to edit it.
+
+    Double-click or press and hold a note to start a slur or legato connection,
+
+    then select the destination note. Use − to delete a bar.
+
+  </p>
+
+</main>
+
+<dialog id="noteDialog">
+
+  <div class="dhead">
+
+    <h2 id="noteTitle">Add note</h2>
+
+    <button class="close" aria-label="Close">✕</button>
+
+  </div>
+
+  <div class="dbody">
+
+    <p class="label">Clef</p>
+
+    <div class="toggle">
+
+      <button id="trebleButton" class="selected">𝄞 Treble</button>
+
+      <button id="bassButton">𝄢 Bass</button>
+
+    </div>
+
+    <p class="label">Pitch</p>
+
+    <div class="pitchbox">
+
+      <button id="pitchDown" aria-label="Lower pitch">↓</button>
+
+      <div id="pitchName">A4</div>
+
+      <button id="pitchUp" aria-label="Raise pitch">↑</button>
+
+    </div>
+
+    <p class="label">Preview</p>
+
+    <div class="previewbox">
+
+      <svg id="notePreview" viewBox="0 0 300 105"></svg>
+
+      <div class="previewcaption" id="previewCaption">Quarter note · A4</div>
+
+    </div>
+
+    <p class="label">Duration</p>
+
+    <div class="durationrow">
+
+      <button id="durationDown" aria-label="Longer duration">−</button>
+
+      <span id="durationName">Quarter note</span>
+
+      <button id="durationUp" aria-label="Shorter duration">＋</button>
+
+    </div>
+
+    <p class="label">Type</p>
+
+    <div class="toggle">
+
+      <button id="noteType" class="selected">Note</button>
+
+      <button id="restType">Rest</button>
+
+    </div>
+
+    <p class="label">Accidental</p>
+
+    <div class="options" id="accidentalOptions">
+
+      <button data-acc="">None</button>
+
+      <button data-acc="♯">♯</button>
+
+      <button data-acc="♭">♭</button>
+
+      <button data-acc="♮">♮</button>
+
+      <button data-acc="𝄪">𝄪</button>
+
+      <button data-acc="𝄫">𝄫</button>
+
+    </div>
+
+    <p class="label">Articulation</p>
+
+    <div class="options">
+
+      <button id="staccato">＋ Staccato</button>
+
+      <button id="dot">＋ Dot</button>
+
+    </div>
+
+  </div>
+
+  <div class="dfoot">
+
+    <button id="deleteNote" class="danger">Delete</button>
+
+    <div class="right">
+
+      <button class="close">Cancel</button>
+
+      <button id="saveNote" class="primary">Add note</button>
+
+    </div>
+
+  </div>
+
+</dialog>
+
+<dialog id="timeDialog">
+
+  <div class="dhead">
+
     <h2>Time and key signature</h2>
-    <div class="field">
-      <label for="beatsPerMeasure">Beats per measure</label>
-      <select id="beatsPerMeasure"></select>
-    </div>
-    <div class="field">
-      <label for="beatUnit">Beat unit</label>
-      <select id="beatUnit">
-        <option value="1">Whole note</option>
-        <option value="2">Half note</option>
-        <option value="4" selected>Quarter note</option>
-        <option value="8">Eighth note</option>
-        <option value="16">Sixteenth note</option>
-        <option value="32">Thirty-second note</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="keyType">Key signature accidentals</label>
-      <select id="keyType">
-        <option value="none">None</option>
-        <option value="sharp">Sharps</option>
-        <option value="flat">Flats</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="keyCount">Number of sharps / flats</label>
-      <select id="keyCount">
-        <option value="0">0</option><option value="1">1</option>
-        <option value="2">2</option><option value="3">3</option>
-        <option value="4">4</option><option value="5">5</option>
-        <option value="6">6</option><option value="7">7</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="keyVertical">Key signature vertical position</label>
-      <select id="keyVertical">
-        <option value="-4">Higher on staff</option>
-        <option value="0" selected>Standard position</option>
-        <option value="4">Lower on staff</option>
-      </select>
-    </div>
-    <div class="preview" id="keyPreview">4/4</div>
-    <div class="error" id="timeError"></div>
-    <div class="dialog-actions">
-      <button id="saveTimeButton" class="primary">Apply</button>
-      <button id="cancelTimeButton">Cancel</button>
-    </div>
+
+    <button class="close" aria-label="Close">✕</button>
+
   </div>
-</div>
+
+  <div class="dbody">
+
+    <p class="label">Common time signatures</p>
+
+    <div class="grid" id="signatureGrid"></div>
+
+    <p class="label" style="margin-top:19px">Custom time signature</p>
+
+    <div class="customgrid" style="margin-bottom:20px">
+
+      <label>Beats per bar
+
+        <input id="customN" type="number" min="1" max="32" value="4">
+
+      </label>
+
+      <label>Beat unit
+
+        <select id="customD">
+
+          <option value="2">Half (2)</option>
+
+          <option value="4" selected>Quarter (4)</option>
+
+          <option value="8">Eighth (8)</option>
+
+          <option value="16">Sixteenth (16)</option>
+
+        </select>
+
+      </label>
+
+    </div>
+
+    <p class="label">Key signature</p>
+
+    <select id="keySignature" class="full" style="margin-bottom:0">
+
+      <option value="C">C major / A minor — no accidentals</option>
+
+      <option value="G">G major / E minor — 1 sharp</option>
+
+      <option value="D">D major / B minor — 2 sharps</option>
+
+      <option value="A">A major / F♯ minor — 3 sharps</option>
+
+      <option value="E">E major / C♯ minor — 4 sharps</option>
+
+      <option value="B">B major / G♯ minor — 5 sharps</option>
+
+      <option value="F#">F♯ major / D♯ minor — 6 sharps</option>
+
+      <option value="F">F major / D minor — 1 flat</option>
+
+      <option value="Bb">B♭ major / G minor — 2 flats</option>
+
+      <option value="Eb">E♭ major / C minor — 3 flats</option>
+
+      <option value="Ab">A♭ major / F minor — 4 flats</option>
+
+      <option value="Db">D♭ major / B♭ minor — 5 flats</option>
+
+      <option value="Gb">G♭ major / E♭ minor — 6 flats</option>
+
+      <option value="Cb">C♭ major / A♭ minor — 7 flats</option>
+
+    </select>
+
+  </div>
+
+  <div class="dfoot">
+
+    <button class="close">Cancel</button>
+
+    <div class="right"><button id="applyTime" class="primary">Apply</button></div>
+
+  </div>
+
+</dialog>
+
+<dialog id="tieDialog">
+
+  <div class="dhead">
+
+    <h2>Connect notes</h2>
+
+    <button class="close" aria-label="Close">✕</button>
+
+  </div>
+
+  <div class="dbody">
+
+    <p>Choose a connection, then select the destination note.</p>
+
+    <div class="toggle">
+
+      <button id="slurType" class="selected">Slur</button>
+
+      <button id="legatoType">Legato tie</button>
+
+    </div>
+
+  </div>
+
+  <div class="dfoot">
+
+    <button class="close">Cancel</button>
+
+    <div class="right"><button id="chooseTarget" class="primary">Choose destination</button></div>
+
+  </div>
+
+</dialog>
+
+<div id="toast"></div>
 
 <script>
+
 (() => {
-  const score = document.getElementById("score");
-  const page = document.getElementById("page");
 
-  let timeBeats = 4;
-  let beatUnit = 4;
-  let keyType = "none";
-  let keyCount = 0;
-  let keyVertical = 0;
-  let notes = [];
-  let nextNoteId = 1;
+"use strict";
 
-  let editor = {
-    measureIndex: 0,
-    beatPosition: 0,
-    editingNoteId: null
-  };
+const $ = id => document.getElementById(id);
 
-  const durationBeats = {
-    whole: 4,
-    half: 2,
-    quarter: 1,
-    eighth: 0.5,
-    sixteenth: 0.25,
-    thirtysecond: 0.125
-  };
+const NS = "http://www.w3.org/2000/svg";
 
-  const noteGlyph = {
-    whole: "𝅝",
-    half: "𝅗𝅥",
-    quarter: "♩",
-    eighth: "♪",
-    sixteenth: "𝅘𝅥𝅯",
-    thirtysecond: "𝅘𝅥𝅰"
-  };
+const durations = [
 
-  const accidentalGlyph = {
-    none: "",
-    natural: "♮",
-    sharp: "♯",
-    flat: "♭"
-  };
+  {name:"Whole note",value:4},
 
-  const pitchNames = [
-    "C2","D2","E2","F2","G2","A2","B2",
-    "C3","D3","E3","F3","G3","A3","B3",
-    "C4","D4","E4","F4","G4","A4","B4",
-    "C5","D5","E5","F5","G5","A5","B5",
-    "C6","D6","E6","F6","G6","A6","B6"
-  ];
+  {name:"Half note",value:2},
 
-  const notePitch = document.getElementById("notePitch");
-  const noteType = document.getElementById("noteType");
-  const noteClef = document.getElementById("noteClef");
-  const noteAccidental = document.getElementById("noteAccidental");
-  const noteDotted = document.getElementById("noteDotted");
-  const noteArticulation = document.getElementById("noteArticulation");
-  const noteConnection = document.getElementById("noteConnection");
-  const noteBackdrop = document.getElementById("noteBackdrop");
-  const timeBackdrop = document.getElementById("timeBackdrop");
-  const beatsSelect = document.getElementById("beatsPerMeasure");
+  {name:"Quarter note",value:1},
 
-  pitchNames.forEach(p => {
-    const option = document.createElement("option");
-    option.value = p;
-    option.textContent = p;
-    notePitch.appendChild(option);
+  {name:"Eighth note",value:.5},
+
+  {name:"Sixteenth note",value:.25},
+
+  {name:"Thirty-second note",value:.125}
+
+];
+
+const presets=[{n:4,d:4},{n:3,d:4},{n:2,d:4},{n:6,d:8},{n:5,d:4}];
+
+let signature=null,key="C";
+
+let bars=[{id:1,notes:[]}];
+
+let nextBarId=2,nextNoteId=1;
+
+let active=null,draft=makeDraft();
+
+let tieMode=null,tieSource=null,pendingConnection="slur";
+
+let longPressTimer=null,longPressTriggered=false;
+
+let toastTimer=null;
+
+function makeDraft(){
+
+  return {durationIndex:2,type:"note",pitch:69,accidental:"",
+
+    dotted:false,staccato:false,clef:"treble"};
+
+}
+
+function svg(tag,attrs={},parent){
+
+  const n=document.createElementNS(NS,tag);
+
+  Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,String(v)));
+
+  if(parent)parent.appendChild(n);
+
+  return n;
+
+}
+
+function text(parent,x,y,value,attrs={}){
+
+  const n=svg("text",{x,y,...attrs},parent);
+
+  n.textContent=value;
+
+  return n;
+
+}
+
+function toast(message){
+
+  $("toast").textContent=message;
+
+  $("toast").style.display="block";
+
+  clearTimeout(toastTimer);
+
+  toastTimer=setTimeout(()=>$("toast").style.display="none",2000);
+
+}
+
+function showDialog(d){if(!d.open)d.showModal();}
+
+function closeDialog(d){if(d.open)d.close();}
+
+document.querySelectorAll(".close").forEach(b=>{
+
+  b.addEventListener("click",()=>{
+
+    closeDialog($("noteDialog"));
+
+    closeDialog($("timeDialog"));
+
+    closeDialog($("tieDialog"));
+
+    // Cancelling a tie should not leave the score waiting for a destination.
+
+    tieMode=null;tieSource=null;
+
   });
 
-  for (let i = 1; i <= 32; i++) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = i;
-    beatsSelect.appendChild(option);
+});
+
+function pitchName(midi){
+
+  const names=["C","C♯","D","E♭","E","F","F♯","G","A♭","A","B♭","B"];
+
+  return names[((midi%12)+12)%12]+(Math.floor(midi/12)-1);
+
+}
+
+function naturalDiatonic(midi){
+
+  const pc=((midi%12)+12)%12;
+
+  const octave=Math.floor(midi/12)-1;
+
+  const map={0:0,1:0,2:1,3:1,4:2,5:3,6:3,7:4,8:4,9:5,10:5,11:6};
+
+  return octave*7+map[pc];
+
+}
+
+function staffPosition(midi,clef){
+
+  const ref=naturalDiatonic(clef==="treble"?64:43);
+
+  return naturalDiatonic(midi)-ref;
+
+}
+
+function keyAccidentals(k){
+
+  const sharp={G:["F"],D:["F","C"],A:["F","C","G"],
+
+    E:["F","C","G","D"],B:["F","C","G","D","A"],
+
+    "F#":["F","C","G","D","A","E"]};
+
+  const flat={F:["B"],Bb:["B","E"],Eb:["B","E","A"],
+
+    Ab:["B","E","A","D"],Db:["B","E","A","D","G"],
+
+    Gb:["B","E","A","D","G","C"],Cb:["B","E","A","D","G","C","F"]};
+
+  return {sharp:sharp[k]||[],flat:flat[k]||[]};
+
+}
+
+function drawKey(parent,x,top){
+
+  const a=keyAccidentals(key);
+
+  const order=a.sharp.length?["F","C","G","D","A","E"].slice(0,a.sharp.length):
+
+    ["B","E","A","D","G","C","F"].slice(0,a.flat.length);
+
+  const symbol=a.sharp.length?"♯":"♭";
+
+  const offsets={F:-10,C:5,G:-15,D:0,A:15,E:-5,B:10};
+
+  order.forEach((letter,i)=>text(parent,x+i*11,top+20+(offsets[letter]||0),symbol,{
+
+    "font-size":16,"text-anchor":"middle",fill:"#222"
+
+  }));
+
+  return order.length*11;
+
+}
+
+function durationUnits(note){
+
+  let u=durations[note.durationIndex].value*(signature?signature.d:4)/4;
+
+  if(note.dotted)u*=1.5;
+
+  return u;
+
+}
+
+function gridStep(bar){
+
+  if(!signature)return 1;
+
+  let step=1;
+
+  bar.notes.forEach(n=>{
+
+    step=Math.min(step,durations[n.durationIndex].value*signature.d/4);
+
+  });
+
+  return Math.max(step,1/8);
+
+}
+
+function counterLabel(i,subdivisions){
+
+  const beat=Math.floor(i/subdivisions)+1,sub=i%subdivisions;
+
+  if(subdivisions===1)return String(beat);
+
+  if(subdivisions===2)return sub===0?String(beat):"&";
+
+  if(subdivisions===4)return sub===0?String(beat):["","e","&","a"][sub];
+
+  if(subdivisions===8)return sub===0?String(beat):["","e","&","a","i","e","&","a"][sub];
+
+  return sub===0?String(beat):"·";
+
+}
+
+function drawLines(parent,x1,x2,top){
+
+  for(let i=0;i<5;i++)svg("line",{x1,y1:top+i*10,x2,y2:top+i*10,stroke:"#222","stroke-width":1},parent);
+
+}
+
+function drawClef(parent,x,y,clef){
+
+  text(parent,x,y,clef==="treble"?"𝄞":"𝄢",{
+
+    "font-size":clef==="treble"?42:34,fill:"#222"
+
+  });
+
+}
+
+function drawTime(parent,x,top){
+
+  if(!signature)return;
+
+  text(parent,x,top+18,String(signature.n),{"font-size":19,"font-weight":"600","text-anchor":"middle"});
+
+  text(parent,x,top+38,String(signature.d),{"font-size":19,"font-weight":"600","text-anchor":"middle"});
+
+}
+
+function drawRest(parent,x,y,index){
+
+  // Draw rests with SVG shapes so they remain visible even if music fonts are absent.
+
+  if(index===0){
+
+    // Whole rest: block hanging below a staff line.
+
+    svg("rect",{x:x-7,y:y-2,width:14,height:6,fill:"#222"},parent);
+
+  }else if(index===1){
+
+    // Half rest: block sitting above a staff line.
+
+    svg("rect",{x:x-7,y:y-4,width:14,height:6,fill:"#222"},parent);
+
+  }else if(index===2){
+
+    // Quarter rest: angular zig-zag.
+
+    svg("path",{d:`M${x+2} ${y-15} l-8 11 l7 5 l-4 9 l10 -13 l-7 -5 Z`,
+
+      fill:"#222"},parent);
+
+  }else{
+
+    // Eighth, sixteenth and thirty-second rests: stem and flags.
+
+    const flags=index-2;
+
+    svg("path",{d:`M${x+2} ${y-16} L${x-2} ${y+9}`,fill:"none",
+
+      stroke:"#222","stroke-width":2.3},parent);
+
+    for(let i=0;i<flags;i++){
+
+      const yy=y-14+i*6;
+
+      svg("path",{d:`M${x+1} ${yy} q12 2 4 11`,fill:"none",
+
+        stroke:"#222","stroke-width":2},parent);
+
+    }
+
+    svg("circle",{cx:x-3,cy:y+10,r:2.5,fill:"#222"},parent);
+
   }
 
-  const systems = 5;
-  const measuresPerSystem = 4;
-  const totalMeasures = systems * measuresPerSystem;
+}
 
-  const STAFF_TOP = 22;
-  const LINE_GAP = 7;
-  const STAFF_HEIGHT = LINE_GAP * 4;
-  const TREBLE_TOP = STAFF_TOP;
-  const BASS_TOP = STAFF_TOP + 70;
-  const EPSILON = 0.000001;
+function drawNoteGraphic(parent,note,x,y,interactive=true){
 
-  // Convert a note type plus its duration dot to quarter-note beats.
-  function getDuration(note) {
-    const base = durationBeats[note.type] || 0;
-    return note.dotted ? base * 1.5 : base;
-  }
+  const g=svg("g",{class:"note-hit",role:"button",tabindex:0,
 
-  function makeLine(top, width) {
-    const line = document.createElement("div");
-    line.className = "staff-line";
-    line.style.top = top + "px";
-    line.style.left = "0";
-    line.style.width = width + "px";
-    return line;
-  }
+    "aria-label":(note.type==="rest"?"Rest":pitchName(note.pitch)+" "+durations[note.durationIndex].name),
 
-  function keyPositions(type, clef) {
-    const sharpTreble = [0, 3, -1, 2, 5, 1, 4];
-    const flatTreble  = [2, -1, 3, 0, 4, 1, 5];
-    const sharpBass   = [2, 5, 1, 4, 7, 3, 6];
-    const flatBass    = [4, 1, 5, 2, 6, 3, 7];
+    style:interactive?"cursor:pointer":""},parent);
 
-    if (type === "sharp") return clef === "treble" ? sharpTreble : sharpBass;
-    if (type === "flat") return clef === "treble" ? flatTreble : flatBass;
-    return [];
-  }
+  svg("rect",{x:x-18,y:y-35,width:40,height:65,fill:"transparent"},g);
 
-  function addKeySignature(measure, measureInSystem) {
-    if (measureInSystem !== 0 || keyType === "none" || keyCount === 0) return;
+  if(note.type==="rest"){
 
-    const glyph = keyType === "sharp" ? "♯" : "♭";
+    drawRest(g,x,y,note.durationIndex);
 
-    ["treble", "bass"].forEach(clef => {
-      const positions = keyPositions(keyType, clef);
-      const top = clef === "treble" ? TREBLE_TOP : BASS_TOP;
-      const wrapper = document.createElement("div");
-      wrapper.className = "key-signature";
+    if(note.dotted)svg("circle",{cx:x+13,cy:y-2,r:2.2,fill:"#222"},g);
 
-      for (let i = 0; i < keyCount; i++) {
-        const symbol = document.createElement("span");
-        symbol.className = "key-symbol";
-        symbol.textContent = glyph;
-        symbol.style.left = (53 + i * 10) + "px";
-        symbol.style.top =
-          (top + positions[i] * (LINE_GAP / 2) - 9 + keyVertical) + "px";
-        wrapper.appendChild(symbol);
+  }else{
+
+    if(note.accidental){
+
+      text(g,x-15,y+5,note.accidental,{"font-size":18,"text-anchor":"middle",fill:"#222"});
+
+    }
+
+    const hollow=note.durationIndex<=1;
+
+    svg("ellipse",{cx:x,cy:y,rx:7.5,ry:5,transform:`rotate(-24 ${x} ${y})`,
+
+      fill:hollow?"white":"#222",stroke:"#222","stroke-width":1.3},g);
+
+    if(note.durationIndex!==0){
+
+      const stemX=x+6,up=staffPosition(note.pitch,note.clef)>=0;
+
+      const endY=up?y-31:y+31;
+
+      svg("line",{x1:stemX,y1:y,x2:stemX,y2:endY,stroke:"#222","stroke-width":1.5},g);
+
+      const flags=Math.max(0,note.durationIndex-2);
+
+      for(let f=0;f<flags;f++){
+
+        const fy=up?endY+f*5:endY-f*5;
+
+        svg("path",{d:up?`M${stemX} ${fy} q14 7 7 16`:`M${stemX} ${fy} q14 -7 7 -16`,
+
+          fill:"none",stroke:"#222","stroke-width":1.5},g);
+
       }
-      measure.appendChild(wrapper);
+
+    }
+
+    if(note.dotted)svg("circle",{cx:x+15,cy:y-1,r:2.2,fill:"#222"},g);
+
+    if(note.staccato)svg("circle",{cx:x,cy:y+11,r:2.2,fill:"#222"},g);
+
+  }
+
+  if(interactive){
+
+    const barId=Number(g.closest("[data-bar-id]").dataset.barId);
+
+    const activate=()=>{
+
+      if(longPressTriggered){longPressTriggered=false;return;}
+
+      if(tieMode==="target"){
+
+        if(!tieSource || (tieSource.barId===barId&&tieSource.noteId===note.id))return;
+
+        const srcBar=bars.find(b=>b.id===tieSource.barId);
+
+        const src=srcBar&&srcBar.notes.find(n=>n.id===tieSource.noteId);
+
+        if(src){
+
+          src.connections=src.connections||[];
+
+          src.connections.push({toBarId:barId,toNoteId:note.id,type:pendingConnection});
+
+          tieMode=null;tieSource=null;
+
+          renderScore();toast("Connection added");
+
+        }
+
+        return;
+
+      }
+
+      openNoteEditor(barId,note);
+
+    };
+
+    g.addEventListener("click",activate);
+
+    g.addEventListener("dblclick",e=>{e.preventDefault();startTie(barId,note.id);});
+
+    g.addEventListener("pointerdown",()=>{
+
+      longPressTriggered=false;
+
+      clearTimeout(longPressTimer);
+
+      longPressTimer=setTimeout(()=>{
+
+        longPressTriggered=true;
+
+        startTie(barId,note.id);
+
+      },600);
+
     });
+
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+
+      g.addEventListener(ev,()=>clearTimeout(longPressTimer)));
+
+    g.addEventListener("keydown",e=>{
+
+      if(e.key==="Enter"||e.key===" "){e.preventDefault();activate();}
+
+    });
+
   }
 
-  function beatLayout(measureInSystem, measureW) {
-    const start = measureInSystem === 0 ? 96 : 14;
-    return { start, usable: Math.max(12, measureW - start - 8) };
-  }
+  return g;
 
-  function addBeatPluses(measure, measureIndex, measureInSystem, measureW) {
-    const { start, usable } = beatLayout(measureInSystem, measureW);
+}
 
-    for (let beat = 0; beat < timeBeats; beat++) {
-      const plus = document.createElement("button");
-      plus.type = "button";
-      plus.className = "beat-plus";
-      plus.textContent = "+";
-      plus.title = `Add note at beat ${beat + 1} of measure ${measureIndex + 1}`;
-      plus.style.left = (start + (beat / timeBeats) * usable) + "px";
-      plus.addEventListener("click", () => openNoteEditor(measureIndex, beat, null));
-      measure.appendChild(plus);
-    }
-  }
+function drawConnection(parent,x1,y1,x2,y2){
 
-  function buildScore() {
-    score.innerHTML = "";
-    const pageWidth = page.clientWidth - 2;
-    const measureW = pageWidth / measuresPerSystem;
+  const mid=(x1+x2)/2;
 
-    for (let s = 0; s < systems; s++) {
-      const system = document.createElement("div");
-      system.className = "score-system";
-      system.style.width = pageWidth + "px";
+  const lift=Math.max(12,Math.min(28,Math.abs(x2-x1)*.15));
 
-      for (let m = 0; m < measuresPerSystem; m++) {
-        const measureIndex = s * measuresPerSystem + m;
-        const measure = document.createElement("div");
-        measure.className = "measure" + (m === measuresPerSystem - 1 ? " last" : "");
-        measure.dataset.measure = measureIndex;
-        measure.style.left = (m * measureW) + "px";
-        measure.style.width = measureW + "px";
+  svg("path",{d:`M${x1} ${y1} Q${mid} ${Math.min(y1,y2)-lift} ${x2} ${y2}`,
 
-        for (let i = 0; i < 5; i++) {
-          measure.appendChild(makeLine(TREBLE_TOP + i * LINE_GAP, measureW));
-          measure.appendChild(makeLine(BASS_TOP + i * LINE_GAP, measureW));
+    fill:"none",stroke:"#222","stroke-width":1.5},parent);
+
+}
+
+function drawPlus(parent,x,y,action,label,minus=false){
+
+  const g=svg("g",{role:"button",tabindex:0,"aria-label":label,style:"cursor:pointer"},parent);
+
+  svg("circle",{cx:x,cy:y,r:9,fill:"#f6f7f9",stroke:"#bbb"},g);
+
+  text(g,x,y+4,minus?"−":"+",{"font-size":15,"text-anchor":"middle",
+
+    fill:minus?"#b42318":"#333"});
+
+  g.addEventListener("click",action);
+
+  g.addEventListener("keydown",e=>{
+
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();action();}
+
+  });
+
+}
+
+function renderScore(){
+
+  const score=$("score");
+
+  score.replaceChildren();
+
+  const top1=70,top2=190,left=38;
+
+  const barWidth=signature?Math.max(190,signature.n*55):210;
+
+  const start=left+104;
+
+  const width=start+bars.length*barWidth+25;
+
+  score.setAttribute("viewBox",`0 0 ${width} 290`);
+
+  score.style.width=Math.max(650,width)+"px";
+
+  const root=svg("g",{},score);
+
+  drawLines(root,left,width-20,top1);
+
+  drawLines(root,left,width-20,top2);
+
+  drawClef(root,left+3,top1+39,"treble");
+
+  drawClef(root,left+4,top2+31,"bass");
+
+  // Small time-signature +, aligned with the counter row.
+
+  drawPlus(root,left+51,37,()=>{
+
+    $("customN").value=signature?signature.n:4;
+
+    $("customD").value=signature?signature.d:4;
+
+    $("keySignature").value=key;
+
+    showDialog($("timeDialog"));
+
+  },"Set time and key signature");
+
+  if(signature)drawTime(root,left+52,top1+4);
+
+  drawKey(root,left+77,top1);
+
+  drawKey(root,left+77,top2);
+
+  drawPlus(root,left-10,top1+20,()=>{
+
+    bars.unshift({id:nextBarId++,notes:[]});
+
+    renderScore();
+
+  },"Add bar at left");
+
+  bars.forEach((bar,idx)=>{
+
+    const x=start+idx*barWidth;
+
+    const group=svg("g",{"data-bar-id":bar.id},root);
+
+    const contentStart=x+10,contentEnd=x+barWidth-14;
+
+    const usable=contentEnd-contentStart;
+
+    if(signature){
+
+      const step=gridStep(bar);
+
+      const subdivisions=Math.max(1,Math.round(1/step));
+
+      const slots=Math.ceil(signature.n/step);
+
+      // Counters remain visible when the bar contains eighth or shorter notes.
+
+      for(let i=0;i<slots;i++){
+
+        const beat=i*step;
+
+        if(beat>=signature.n)continue;
+
+        const px=contentStart+beat/signature.n*usable;
+
+        const cg=svg("g",{role:"button",tabindex:0,style:"cursor:pointer"},group);
+
+        svg("rect",{x:px-13,y:22,width:26,height:27,rx:5,fill:"transparent"},cg);
+
+        text(cg,px,40,counterLabel(i,subdivisions),{
+
+          "font-size":12,"text-anchor":"middle",fill:"#555"
+
+        });
+
+        cg.addEventListener("mouseenter",()=>cg.querySelector("rect").setAttribute("fill","#eaf1ff"));
+
+        cg.addEventListener("mouseleave",()=>cg.querySelector("rect").setAttribute("fill","transparent"));
+
+        const add=()=>openNoteEditor(bar.id,beat,null);
+
+        cg.addEventListener("click",add);
+
+        cg.addEventListener("keydown",e=>{
+
+          if(e.key==="Enter"||e.key===" "){e.preventDefault();add();}
+
+        });
+
+      }
+
+      const positions=new Map();
+
+      bar.notes.forEach(note=>{
+
+        const px=contentStart+note.beat/signature.n*usable;
+
+        const staffTop=note.clef==="treble"?top1:top2;
+
+        const py=staffTop+20-staffPosition(note.pitch,note.clef)*5;
+
+        positions.set(note.id,{x:px,y:py,note});
+
+        drawNoteGraphic(group,note,px,py);
+
+        // Ledger lines above and below the staff.
+
+        const offset=staffPosition(note.pitch,note.clef);
+
+        if(offset>4){
+
+          for(let j=6;j<=offset;j+=2)
+
+            svg("line",{x1:px-10,y1:staffTop+40-j*5,x2:px+10,y2:staffTop+40-j*5,stroke:"#222"},group);
+
+        }else if(offset<0){
+
+          for(let j=-2;j>=offset;j-=2)
+
+            svg("line",{x1:px-10,y1:staffTop+40-j*5,x2:px+10,y2:staffTop+40-j*5,stroke:"#222"},group);
+
         }
 
-        const number = document.createElement("div");
-        number.className = "measure-number";
-        number.textContent = measureIndex + 1;
-        measure.appendChild(number);
-
-        if (m === 0) {
-          const treble = document.createElement("div");
-          treble.className = "clef treble-clef";
-          treble.textContent = "𝄞";
-          measure.appendChild(treble);
-
-          const bass = document.createElement("div");
-          bass.className = "clef bass-clef";
-          bass.textContent = "𝄢";
-          measure.appendChild(bass);
-
-          const time = document.createElement("div");
-          time.className = "time-display";
-          time.innerHTML = `<div>${timeBeats}</div><div>${beatUnit}</div>`;
-          measure.appendChild(time);
-        }
-
-        addKeySignature(measure, m);
-        addBeatPluses(measure, measureIndex, m, measureW);
-        system.appendChild(measure);
-      }
-
-      score.appendChild(system);
-    }
-
-    renderNotes();
-    updateKeyPreview();
-  }
-
-  function pitchStep(pitch) {
-    const match = /^([A-G])(\d)$/.exec(pitch);
-    const order = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
-    return Number(match[2]) * 7 + order[match[1]];
-  }
-
-  function staffY(pitch, clef) {
-    const bottomPitch = clef === "treble" ? pitchStep("E4") : pitchStep("G2");
-    const step = pitchStep(pitch) - bottomPitch;
-    const bottomY = (clef === "treble" ? TREBLE_TOP : BASS_TOP) + STAFF_HEIGHT;
-    return bottomY - step * (LINE_GAP / 2);
-  }
-
-  function noteX(note) {
-    const measureInSystem = note.measureIndex % measuresPerSystem;
-    const pageWidth = page.clientWidth - 2;
-    const measureW = pageWidth / measuresPerSystem;
-    const { start, usable } = beatLayout(measureInSystem, measureW);
-    return start + (note.beatPosition / timeBeats) * usable;
-  }
-
-  function renderNotes() {
-    document.querySelectorAll(".note,.note-ledger,.slur").forEach(el => el.remove());
-
-    notes.forEach(note => {
-      const measure = document.querySelector(
-        `.measure[data-measure="${note.measureIndex}"]`
-      );
-      if (!measure) return;
-
-      const x = noteX(note);
-      const y = staffY(note.pitch, note.clef);
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "note";
-      button.style.left = x + "px";
-      button.style.top = y + "px";
-      button.title = `${note.pitch}, ${note.type}${note.dotted ? " dotted" : ""}`;
-      button.setAttribute("aria-label", "Edit " + button.title);
-
-      const accidental = accidentalGlyph[note.accidental || "none"];
-      if (accidental) {
-        const acc = document.createElement("span");
-        acc.className = "note-accidental";
-        acc.textContent = accidental;
-        button.appendChild(acc);
-      }
-
-      const head = document.createElement("span");
-      head.className = "notehead " +
-        (note.type === "whole" || note.type === "half" ? note.type : "filled");
-      button.appendChild(head);
-
-      if (note.type !== "whole") {
-        const stem = document.createElement("span");
-        stem.className = "stem";
-        button.appendChild(stem);
-      }
-
-      if (["eighth", "sixteenth", "thirtysecond"].includes(note.type)) {
-        const flag = document.createElement("span");
-        flag.className = "flag";
-        flag.textContent = note.type === "eighth" ? "♪" :
-          note.type === "sixteenth" ? "𝅘𝅥𝅯" : "𝅘𝅥𝅰";
-        button.appendChild(flag);
-      }
-
-      if (note.dotted) {
-        const dot = document.createElement("span");
-        dot.className = "duration-dot";
-        dot.textContent = "·";
-        button.appendChild(dot);
-      }
-
-      if (note.articulation === "staccato") {
-        const dot = document.createElement("span");
-        dot.className = "staccato-dot";
-        dot.textContent = "•";
-        button.appendChild(dot);
-      }
-
-      const top = note.clef === "treble" ? TREBLE_TOP : BASS_TOP;
-      const bottom = top + STAFF_HEIGHT;
-      if (y < top) {
-        for (let ly = top - LINE_GAP; ly >= y - 1; ly -= LINE_GAP) {
-          addLedger(measure, x, ly);
-        }
-      } else if (y > bottom) {
-        for (let ly = bottom + LINE_GAP; ly <= y + 1; ly += LINE_GAP) {
-          addLedger(measure, x, ly);
-        }
-      }
-
-      button.addEventListener("click", () => {
-        openNoteEditor(note.measureIndex, note.beatPosition, note.id);
       });
-      measure.appendChild(button);
-    });
 
-    renderSlurs();
-    document.getElementById("status").textContent =
-      `${notes.length} note${notes.length === 1 ? "" : "s"} added`;
-  }
+      bar.notes.forEach(note=>{
 
-  function addLedger(measure, x, y) {
-    const line = document.createElement("div");
-    line.className = "ledger-line note-ledger";
-    line.style.left = x + "px";
-    line.style.top = y + "px";
-    measure.appendChild(line);
-  }
+        (note.connections||[]).forEach(c=>{
 
-  function hasConnectionToNext(note) {
-    return ["slurNext", "legatoNext"].includes(note.connection);
-  }
+          const destBar=bars.find(b=>b.id===c.toBarId);
 
-  function hasConnectionFromPrevious(note) {
-    return ["slurPrevious", "legatoPrevious"].includes(note.connection);
-  }
+          const dest=destBar&&destBar.notes.find(n=>n.id===c.toNoteId);
 
-  function renderSlurs() {
-    notes.forEach(note => {
-      if (!hasConnectionToNext(note)) return;
+          if(!dest)return;
 
-      const next = notes
-        .filter(n => n.clef === note.clef)
-        .filter(n => n.measureIndex * 1000 + n.beatPosition >
-                     note.measureIndex * 1000 + note.beatPosition)
-        .sort((a, b) =>
-          (a.measureIndex * 1000 + a.beatPosition) -
-          (b.measureIndex * 1000 + b.beatPosition)
-        )[0];
+          const srcPos=positions.get(note.id);
 
-      if (!next) return;
-      drawConnection(note, next);
-    });
+          let destPos;
 
-    // Also support a connection specified from the following note.
-    notes.forEach(note => {
-      if (!hasConnectionFromPrevious(note)) return;
-      const previous = notes
-        .filter(n => n.clef === note.clef)
-        .filter(n => n.measureIndex * 1000 + n.beatPosition <
-                     note.measureIndex * 1000 + note.beatPosition)
-        .sort((a, b) =>
-          (b.measureIndex * 1000 + b.beatPosition) -
-          (a.measureIndex * 1000 + a.beatPosition)
-        )[0];
+          if(destBar.id===bar.id)destPos=positions.get(dest.id);
 
-      if (!previous || hasConnectionToNext(previous)) return;
-      drawConnection(previous, note);
-    });
-  }
+          else{
 
-  function drawConnection(first, second) {
-    // This lightweight arc is rendered when both notes are in the same measure.
-    // Cross-measure links are stored, but need a spanning-system engraving layer.
-    if (first.measureIndex !== second.measureIndex) return;
+            const destIndex=bars.indexOf(destBar);
 
-    const measure = document.querySelector(
-      `.measure[data-measure="${first.measureIndex}"]`
-    );
-    if (!measure) return;
+            destPos={x:start+destIndex*barWidth+10+
 
-    const x1 = noteX(first);
-    const x2 = noteX(second);
-    const y1 = staffY(first.pitch, first.clef);
-    const y2 = staffY(second.pitch, second.clef);
-    const left = Math.min(x1, x2) + 6;
-    const width = Math.max(12, Math.abs(x2 - x1) - 12);
-    const arc = document.createElement("div");
-    arc.className = "slur";
-    arc.style.left = left + "px";
-    arc.style.top = (Math.min(y1, y2) - 14) + "px";
-    arc.style.width = width + "px";
-    measure.appendChild(arc);
-  }
+              dest.beat/signature.n*(barWidth-24),
 
-  function openNoteEditor(measureIndex, beatPosition, noteId) {
-    editor = { measureIndex, beatPosition, editingNoteId: noteId };
-    const existing = noteId === null ? null : notes.find(n => n.id === noteId);
+              y:(dest.clef==="treble"?top1:top2)+20-staffPosition(dest.pitch,dest.clef)*5};
 
-    document.getElementById("noteDialogTitle").textContent =
-      existing ? "Edit note" : "Add note";
+          }
 
-    notePitch.value = existing ? existing.pitch : "C4";
-    noteType.value = existing ? existing.type : "quarter";
-    noteClef.value = existing ? existing.clef : "treble";
-    noteAccidental.value = existing ? (existing.accidental || "none") : "none";
-    noteDotted.value = existing && existing.dotted ? "yes" : "no";
-    noteArticulation.value = existing ? (existing.articulation || "none") : "none";
-    noteConnection.value = existing ? (existing.connection || "none") : "none";
+          if(srcPos&&destPos)
 
-    document.getElementById("beatPositionLabel").textContent =
-      `Measure ${measureIndex + 1}, beat ${beatPosition + 1}`;
+            drawConnection(group,srcPos.x+6,srcPos.y-6,destPos.x-6,destPos.y-6);
 
-    document.getElementById("deleteNoteButton").style.display =
-      existing ? "inline-block" : "none";
+        });
 
-    hideError("noteError");
-    updateNotePreview();
-    noteBackdrop.classList.add("open");
-  }
+      });
 
-  function updateNotePreview() {
-    const acc = accidentalGlyph[noteAccidental.value] || "";
-    const glyph = noteGlyph[noteType.value] || "♩";
-    const dot = noteDotted.value === "yes" ? " ·" : "";
-    const staccato = noteArticulation.value === "staccato" ? "  •" : "";
-    const connection = noteConnection.value === "none" ? "" :
-      noteConnection.value.toLowerCase().includes("slur") ? "  ⌒" : "  legato";
-    document.getElementById("notePreview").textContent =
-      `${acc}${notePitch.value}  ${glyph}${dot}${staccato}${connection}`;
-  }
-
-  function showError(id, message) {
-    const el = document.getElementById(id);
-    el.textContent = message;
-    el.classList.add("visible");
-  }
-
-  function hideError(id) {
-    const el = document.getElementById(id);
-    el.textContent = "";
-    el.classList.remove("visible");
-  }
-
-  function measureEnd(measureIndex, excludingId = null, candidate = null) {
-    const measureNotes = notes.filter(
-      n => n.measureIndex === measureIndex && n.id !== excludingId
-    );
-    if (candidate) measureNotes.push(candidate);
-
-    // Simultaneous notes share the same timeline. The measure ends at the
-    // latest endpoint, not the sum of durations across both staves.
-    return measureNotes.reduce(
-      (latest, n) => Math.max(latest, n.beatPosition + getDuration(n)),
-      0
-    );
-  }
-
-  function validateNoteSave() {
-    const duration = getDuration({
-      type: noteType.value,
-      dotted: noteDotted.value === "yes"
-    });
-
-    if (!duration) {
-      showError("noteError", "Unknown note duration.");
-      return false;
     }
 
-    const candidate = {
-      measureIndex: editor.measureIndex,
-      beatPosition: editor.beatPosition,
-      type: noteType.value,
-      dotted: noteDotted.value === "yes",
-      pitch: notePitch.value,
-      clef: noteClef.value
-    };
+    drawPlus(group,x+barWidth-3,top1+20,()=>{
 
-    const end = editor.beatPosition + duration;
-    if (end > timeBeats + EPSILON) {
-      showError(
-        "noteError",
-        `This note ends at beat ${end}, but the measure allows only ${timeBeats} beats.`
-      );
-      return false;
-    }
+      if(bars.length===1){
 
-    const latestEnd = measureEnd(
-      editor.measureIndex,
-      editor.editingNoteId,
-      candidate
-    );
+        bars[0].notes=[];
 
-    if (latestEnd > timeBeats + EPSILON) {
-      showError(
-        "noteError",
-        `Cannot save: this note extends beyond the ${timeBeats}-beat measure.`
-      );
-      return false;
-    }
+        renderScore();toast("Cleared the only bar");return;
 
-    return true;
-  }
+      }
 
-  function saveNote() {
-    hideError("noteError");
-    if (!validateNoteSave()) return;
+      const removed=bars[idx];
 
-    const data = {
-      measureIndex: editor.measureIndex,
-      beatPosition: editor.beatPosition,
-      pitch: notePitch.value,
-      type: noteType.value,
-      clef: noteClef.value,
-      accidental: noteAccidental.value,
-      dotted: noteDotted.value === "yes",
-      articulation: noteArticulation.value,
-      connection: noteConnection.value
-    };
+      bars=bars.filter(b=>b.id!==removed.id);
 
-    if (editor.editingNoteId !== null) {
-      const index = notes.findIndex(n => n.id === editor.editingNoteId);
-      if (index !== -1) notes[index] = { ...notes[index], ...data };
-    } else {
-      notes.push({ id: nextNoteId++, ...data });
-    }
+      bars.forEach(b=>b.notes.forEach(n=>{
 
-    noteBackdrop.classList.remove("open");
-    renderNotes();
-  }
+        n.connections=(n.connections||[]).filter(c=>c.toBarId!==removed.id);
 
-  function deleteNote() {
-    if (editor.editingNoteId === null) return;
-    notes = notes.filter(n => n.id !== editor.editingNoteId);
-    noteBackdrop.classList.remove("open");
-    renderNotes();
-  }
+      }));
 
-  function openTimeEditor() {
-    beatsSelect.value = timeBeats;
-    document.getElementById("beatUnit").value = beatUnit;
-    document.getElementById("keyType").value = keyType;
-    document.getElementById("keyCount").value = keyCount;
-    document.getElementById("keyVertical").value = keyVertical;
-    hideError("timeError");
-    updateKeyPreview();
-    timeBackdrop.classList.add("open");
-  }
+      renderScore();toast("Bar deleted");
 
-  function updateKeyPreview() {
-    const beats = beatsSelect.value || timeBeats;
-    const unit = document.getElementById("beatUnit").value || beatUnit;
-    const type = document.getElementById("keyType").value || keyType;
-    const count = Number(document.getElementById("keyCount").value ?? keyCount);
-    const glyph = type === "sharp" ? "♯" : type === "flat" ? "♭" : "";
-    const symbols = type === "none" ? "No key signature" : glyph.repeat(count);
-    document.getElementById("keyPreview").textContent = `${beats}/${unit}     ${symbols}`;
-  }
+    },"Delete bar",true);
 
-  function saveTimeSettings() {
-    hideError("timeError");
-    const newBeats = Number(beatsSelect.value);
-    const newUnit = Number(document.getElementById("beatUnit").value);
-    const newKeyType = document.getElementById("keyType").value;
-    const newKeyCount = Number(document.getElementById("keyCount").value);
-    const newKeyVertical = Number(document.getElementById("keyVertical").value);
+    drawPlus(group,x+barWidth-3,top2+20,()=>{
 
-    const invalidMeasures = [];
-    for (let m = 0; m < totalMeasures; m++) {
-      const end = measureEnd(m);
-      if (end > newBeats + EPSILON) invalidMeasures.push(m + 1);
-    }
+      bars.splice(idx+1,0,{id:nextBarId++,notes:[]});
 
-    if (invalidMeasures.length) {
-      showError(
-        "timeError",
-        `Cannot apply this time signature. Measure(s) ${invalidMeasures.join(", ")} ` +
-        `have notes extending beyond ${newBeats} beats. Adjust those notes first.`
-      );
-      return;
-    }
+      renderScore();
 
-    timeBeats = newBeats;
-    beatUnit = newUnit;
-    keyType = newKeyType;
-    keyCount = newKeyType === "none" ? 0 : newKeyCount;
-    keyVertical = newKeyVertical;
+    },"Add bar to the right");
 
-    timeBackdrop.classList.remove("open");
-    buildScore();
-  }
-
-  document.getElementById("saveNoteButton").addEventListener("click", saveNote);
-  document.getElementById("deleteNoteButton").addEventListener("click", deleteNote);
-  document.getElementById("cancelNoteButton").addEventListener("click", () => {
-    noteBackdrop.classList.remove("open");
   });
 
-  document.getElementById("editTimeButton").addEventListener("click", openTimeEditor);
-  document.getElementById("saveTimeButton").addEventListener("click", saveTimeSettings);
-  document.getElementById("cancelTimeButton").addEventListener("click", () => {
-    timeBackdrop.classList.remove("open");
+  const end=start+bars.length*barWidth-14;
+
+  [top1,top2].forEach(y=>{
+
+    svg("line",{x1:end,y1:y,x2:end,y2:y+40,stroke:"#222","stroke-width":1.2},root);
+
+    svg("line",{x1:end+4,y1:y,x2:end+4,y2:y+40,stroke:"#222","stroke-width":1.2},root);
+
   });
 
-  document.getElementById("clearButton").addEventListener("click", () => {
-    if (notes.length && !confirm("Delete all notes from the score?")) return;
-    notes = [];
-    renderNotes();
+  $("barCount").textContent=bars.length+" "+(bars.length===1?"bar":"bars");
+
+  $("sigStatus").textContent=signature?signature.n+"/"+signature.d+" · "+key:"No time signature";
+
+  const count=bars.reduce((sum,b)=>sum+b.notes.length,0);
+
+  $("noteCount").textContent=count+" "+(count===1?"note":"notes");
+
+}
+
+function startTie(barId,noteId){
+
+  tieSource={barId,noteId};
+
+  pendingConnection="slur";
+
+  $("slurType").classList.add("selected");
+
+  $("legatoType").classList.remove("selected");
+
+  showDialog($("tieDialog"));
+
+}
+
+$("slurType").addEventListener("click",()=>{
+
+  pendingConnection="slur";
+
+  $("slurType").classList.add("selected");
+
+  $("legatoType").classList.remove("selected");
+
+});
+
+$("legatoType").addEventListener("click",()=>{
+
+  pendingConnection="legato";
+
+  $("legatoType").classList.add("selected");
+
+  $("slurType").classList.remove("selected");
+
+});
+
+$("chooseTarget").addEventListener("click",()=>{
+
+  if(!tieSource){closeDialog($("tieDialog"));return;}
+
+  tieMode="target";
+
+  closeDialog($("tieDialog"));
+
+  toast("Select the destination note");
+
+});
+
+function openNoteEditor(barId,note){
+
+  // Always allow new note entry unless the user is explicitly choosing a tie destination.
+
+  if(tieMode==="target")return;
+
+  active={barId,noteId:note?note.id:null,beat:note?note.beat:0};
+
+  draft=note?{
+
+    durationIndex:note.durationIndex,type:note.type,pitch:note.pitch,
+
+    accidental:note.accidental||"",dotted:!!note.dotted,
+
+    staccato:!!note.staccato,clef:note.clef
+
+  }:makeDraft();
+
+  renderDraft();
+
+  showDialog($("noteDialog"));
+
+}
+
+function renderDraft(){
+
+  $("noteTitle").textContent=active&&active.noteId?"Edit note":"Add note";
+
+  $("durationName").textContent=durations[draft.durationIndex].name;
+
+  $("pitchName").textContent=pitchName(draft.pitch);
+
+  $("trebleButton").classList.toggle("selected",draft.clef==="treble");
+
+  $("bassButton").classList.toggle("selected",draft.clef==="bass");
+
+  $("noteType").classList.toggle("selected",draft.type==="note");
+
+  $("restType").classList.toggle("selected",draft.type==="rest");
+
+  $("staccato").classList.toggle("selected",draft.staccato);
+
+  $("dot").classList.toggle("selected",draft.dotted);
+
+  $("deleteNote").style.visibility=active&&active.noteId?"visible":"hidden";
+
+  $("saveNote").textContent=active&&active.noteId?"Save changes":"Add note";
+
+  document.querySelectorAll("[data-acc]").forEach(b=>
+
+    b.classList.toggle("selected",b.dataset.acc===draft.accidental));
+
+  renderPreview();
+
+}
+
+function renderPreview(){
+
+  const s=$("notePreview");
+
+  s.replaceChildren();
+
+  for(let i=0;i<5;i++)svg("line",{x1:18,y1:27+i*10,x2:282,y2:27+i*10,stroke:"#bbb"},s);
+
+  // Preview uses the same SVG note/rest renderer as the score.
+
+  const y=47-staffPosition(draft.pitch,draft.clef)*5;
+
+  drawNoteGraphic(s,draft,150,y,false);
+
+  $("previewCaption").textContent=
+
+    (draft.type==="rest"?"Rest":durations[draft.durationIndex].name)+
+
+    (draft.type==="rest"?"":" · "+pitchName(draft.pitch))+
+
+    (draft.accidental?" · "+draft.accidental:"")+
+
+    (draft.dotted?" · Dotted":"")+
+
+    (draft.staccato?" · Staccato":"");
+
+}
+
+$("trebleButton").addEventListener("click",()=>{draft.clef="treble";renderDraft();});
+
+$("bassButton").addEventListener("click",()=>{draft.clef="bass";renderDraft();});
+
+$("pitchUp").addEventListener("click",()=>{draft.pitch=Math.min(95,draft.pitch+1);renderDraft();});
+
+$("pitchDown").addEventListener("click",()=>{draft.pitch=Math.max(24,draft.pitch-1);renderDraft();});
+
+$("durationDown").addEventListener("click",()=>{
+
+  draft.durationIndex=Math.max(0,draft.durationIndex-1);renderDraft();
+
+});
+
+$("durationUp").addEventListener("click",()=>{
+
+  draft.durationIndex=Math.min(durations.length-1,draft.durationIndex+1);renderDraft();
+
+});
+
+$("noteType").addEventListener("click",()=>{draft.type="note";renderDraft();});
+
+$("restType").addEventListener("click",()=>{draft.type="rest";renderDraft();});
+
+$("staccato").addEventListener("click",()=>{draft.staccato=!draft.staccato;renderDraft();});
+
+$("dot").addEventListener("click",()=>{draft.dotted=!draft.dotted;renderDraft();});
+
+document.querySelectorAll("[data-acc]").forEach(b=>
+
+  b.addEventListener("click",()=>{draft.accidental=b.dataset.acc;renderDraft();}));
+
+$("saveNote").addEventListener("click",()=>{
+
+  if(!active)return;
+
+  const bar=bars.find(b=>b.id===active.barId);
+
+  if(!bar){closeDialog($("noteDialog"));active=null;return;}
+
+  const item={
+
+    id:active.noteId||nextNoteId++,
+
+    beat:active.beat,durationIndex:draft.durationIndex,type:draft.type,
+
+    pitch:draft.pitch,accidental:draft.accidental,dotted:draft.dotted,
+
+    staccato:draft.staccato,clef:draft.clef,connections:[]
+
+  };
+
+  if(active.noteId){
+
+    const i=bar.notes.findIndex(n=>n.id===active.noteId);
+
+    if(i>=0){
+
+      item.connections=bar.notes[i].connections||[];
+
+      bar.notes[i]=item;
+
+    }else{
+
+      bar.notes.push(item);
+
+    }
+
+  }else{
+
+    bar.notes.push(item);
+
+  }
+
+  closeDialog($("noteDialog"));
+
+  active=null;
+
+  renderScore();
+
+  toast(item.type==="rest"?"Rest added":"Note added");
+
+});
+
+$("deleteNote").addEventListener("click",()=>{
+
+  if(!active||!active.noteId)return;
+
+  const deleted={barId:active.barId,noteId:active.noteId};
+
+  const bar=bars.find(b=>b.id===deleted.barId);
+
+  if(bar)bar.notes=bar.notes.filter(n=>n.id!==deleted.noteId);
+
+  bars.forEach(b=>b.notes.forEach(n=>{
+
+    n.connections=(n.connections||[]).filter(c=>
+
+      !(c.toBarId===deleted.barId&&c.toNoteId===deleted.noteId));
+
+  }));
+
+  closeDialog($("noteDialog"));
+
+  active=null;renderScore();toast("Note deleted");
+
+});
+
+// Five presets only.
+
+presets.forEach(s=>{
+
+  const b=document.createElement("button");
+
+  b.className="sigcard";
+
+  b.innerHTML='<span class="sigfrac"><span>'+s.n+'</span><span>'+s.d+
+
+    '</span></span><small>'+s.n+'/'+s.d+'</small>';
+
+  b.addEventListener("click",()=>{
+
+    $("customN").value=s.n;
+
+    $("customD").value=s.d;
+
+    $("signatureGrid").querySelectorAll("button").forEach(x=>x.classList.remove("selected"));
+
+    b.classList.add("selected");
+
   });
 
-  [
-    notePitch, noteType, noteClef, noteAccidental,
-    noteDotted, noteArticulation, noteConnection
-  ].forEach(el => el.addEventListener("change", updateNotePreview));
+  $("signatureGrid").appendChild(b);
 
-  ["beatsPerMeasure", "beatUnit", "keyType", "keyCount", "keyVertical"]
-    .forEach(id => document.getElementById(id)
-      .addEventListener("change", updateKeyPreview));
+});
 
-  [noteBackdrop, timeBackdrop].forEach(backdrop => {
-    backdrop.addEventListener("click", event => {
-      if (event.target === backdrop) backdrop.classList.remove("open");
-    });
-  });
+$("applyTime").addEventListener("click",()=>{
 
-  window.addEventListener("resize", buildScore);
-  buildScore();
+  const n=Number($("customN").value),d=Number($("customD").value);
+
+  if(!Number.isInteger(n)||n<1||n>32){
+
+    toast("Beats per bar must be between 1 and 32");return;
+
+  }
+
+  signature={n,d};
+
+  key=$("keySignature").value;
+
+  closeDialog($("timeDialog"));
+
+  renderScore();
+
+  toast("Time and key signature applied");
+
+});
+
+$("clearButton").addEventListener("click",()=>{
+
+  // Close dialogs and clear every piece of score/editor state.
+
+  closeDialog($("noteDialog"));
+
+  closeDialog($("timeDialog"));
+
+  closeDialog($("tieDialog"));
+
+  active=null;
+
+  draft=makeDraft();
+
+  signature=null;
+
+  key="C";
+
+  bars=[{id:1,notes:[]}];
+
+  nextBarId=2;
+
+  nextNoteId=1;
+
+  tieMode=null;
+
+  tieSource=null;
+
+  pendingConnection="slur";
+
+  clearTimeout(longPressTimer);
+
+  $("customN").value=4;
+
+  $("customD").value=4;
+
+  $("keySignature").value="C";
+
+  $("signatureGrid").querySelectorAll("button").forEach(b=>b.classList.remove("selected"));
+
+  renderScore();
+
+  toast("Score reset");
+
+});
+
+renderScore();
+
 })();
+
 </script>
+
 </body>
+
 </html>
